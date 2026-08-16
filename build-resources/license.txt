@@ -1,0 +1,6 @@
+AIMA CRM - Licencia de uso
+
+Este software es propiedad de AIMA (Agencia de Automatización Inmobiliaria).
+Todos los derechos reservados.
+
+El uso de este software está sujeto a los términos de la licencia comercial.

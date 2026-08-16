@@ -1,0 +1,348 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* AIMA Brand Theme */
+  --color-bg: #0f0a1a;
+  --color-bg-card: #1a1230;
+  --color-border: #2d1b4e;
+  --color-primary: #7c3aed;
+  --color-primary-hover: #a855f7;
+  --color-text: #f3f0fa;
+  --color-text-muted: #9a8ab8;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  /* Chart palette — validated against dark surface #1a1230 with the dataviz
+     validator (node scripts/validate_palette.js --mode dark --surface "#1a1230"). */
+  --chart-surface: #1a1230;
+  --chart-surface-hover: #1f163a;
+  --chart-grid: #2d1b4e;
+  --chart-baseline: #3d2a5e;
+  --chart-text-primary: #f3f0fa;
+  --chart-text-secondary: #9a8ab8;
+  --chart-text-muted: #6a5a8a;
+
+  /* Sequential purple ramp (magnitude) — ordinal PASS on dark:
+     #cab8f0 → #9a7aee → #7c3aed (monotone L, ΔL ≥ 0.06, dark end ≥ 2:1) */
+  --series-seq-100: #cab8f0;
+  --series-seq-200: #9a7aee;
+  --series-seq-300: #7c3aed; /* brand primary = darkest step */
+
+  /* Categorical (CVD-safe order on dark; green↔pink WARN is legal because
+     every use ships an icon + label secondary encoding) */
+  --series-cat-1: #7c3aed; /* purple (brand) */
+  --series-cat-2: #d97706; /* amber */
+  --series-cat-3: #0891b2; /* cyan */
+  --series-cat-4: #a16207; /* yellow */
+  --series-cat-5: #db2777; /* pink */
+  --series-cat-6: #16a34a; /* green */
+  --series-cat-7: #a855f7; /* light purple */
+  --series-cat-8: #ef4444; /* red */
+
+  /* Status palette (fixed, never reused for series; always with icon + label) */
+  --status-good: #22c55e;
+  --status-warning: #f59e0b;
+  --status-serious: #f97316;
+  --status-critical: #ef4444;
+
+  /* Shadow tokens */
+  --shadow-sm: 0 1px 2px 0 rgba(124, 58, 237, 0.08);
+  --shadow-md: 0 4px 6px -1px rgba(124, 58, 237, 0.12), 0 2px 4px -2px rgba(124, 58, 237, 0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(124, 58, 237, 0.16), 0 4px 6px -4px rgba(124, 58, 237, 0.1);
+  --shadow-glow: 0 0 40px rgba(124, 58, 237, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Inter', system-ui, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  /* Radial glow on page background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124, 58, 237, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* Focus visible for keyboard nav */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Scrollbar styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-primary);
+  }
+}
+
+@layer components {
+  /* Buttons */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-aima-bg;
+  }
+
+  .btn-primary {
+    @apply btn bg-aima-primary text-white hover:bg-aima-primaryHover focus:ring-aima-primary;
+  }
+
+  .btn-secondary {
+    @apply btn bg-aima-border text-aima-text hover:bg-aima-border/80 focus:ring-aima-border;
+  }
+
+  .btn-danger {
+    @apply btn bg-aima-danger text-white hover:bg-red-600 focus:ring-aima-danger;
+  }
+
+  .btn-success {
+    @apply btn bg-aima-success text-white hover:bg-green-600 focus:ring-aima-success;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-aima-text hover:bg-aima-border focus:ring-aima-border;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full px-3 py-2 rounded-lg bg-aima-bg border border-aima-border text-aima-text placeholder-aima-textMuted focus:outline-none focus:ring-2 focus:ring-aima-primary focus:border-transparent transition-all duration-150;
+  }
+
+  .select {
+    @apply input appearance-none bg-no-repeat bg-right pr-10;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239a8ab8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-size: 1.5em 1.5em;
+  }
+
+  /* Cards */
+  .card {
+    @apply aima-card rounded-xl p-4;
+  }
+
+  .aima-card {
+    @apply relative bg-aima-bgCard border border-aima-border;
+    background-image: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
+    box-shadow: var(--shadow-sm);
+    transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  }
+
+  .aima-card:hover {
+    @apply border-aima-primary/30;
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-green-500/20 text-green-400 border border-green-500/30;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+  }
+
+  .badge-danger {
+    @apply badge bg-red-500/20 text-red-400 border border-red-500/30;
+  }
+
+  .badge-info {
+    @apply badge bg-blue-500/20 text-blue-400 border border-blue-500/30;
+  }
+
+  .badge-purple {
+    @apply badge bg-purple-500/20 text-purple-400 border border-purple-500/30;
+  }
+
+  .badge-blue {
+    @apply badge bg-blue-500/20 text-blue-400 border border-blue-500/30;
+  }
+
+  .badge-yellow {
+    @apply badge bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+  }
+
+  .badge-teal {
+    @apply badge bg-teal-500/20 text-teal-400 border border-teal-500/30;
+  }
+
+  .badge-orange {
+    @apply badge bg-orange-500/20 text-orange-400 border border-orange-500/30;
+  }
+
+  .badge-cyan {
+    @apply badge bg-cyan-500/20 text-cyan-400 border border-cyan-500/30;
+  }
+
+  .badge-gray {
+    @apply badge bg-gray-500/20 text-gray-400 border border-gray-500/30;
+  }
+
+  /* Toggle switches */
+  .toggle {
+    @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-aima-primary focus:ring-offset-2 focus:ring-offset-aima-bg;
+  }
+
+  .toggle-on {
+    @apply bg-aima-primary;
+  }
+
+  .toggle-off {
+    @apply bg-aima-border;
+  }
+
+  .toggle-thumb {
+    @apply inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition-transform duration-200;
+  }
+
+  .toggle-on .toggle-thumb {
+    @apply translate-x-5;
+  }
+
+  .toggle-off .toggle-thumb {
+    @apply translate-x-0;
+  }
+
+  /* Radio */
+  .radio-group {
+    @apply flex items-center gap-2;
+  }
+
+  .radio {
+    @apply h-4 w-4 appearance-none rounded-full border-2 border-aima-border bg-aima-bgCard text-aima-primary transition-all duration-200;
+  }
+
+  .radio:checked {
+    @apply border-aima-primary bg-aima-primary;
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5.354 8.854a.5.5 0 0 1 0-.708l3-3a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8 7.207l-2.646 2.647a.5.5 0 0 1-.708 0z'/%3e%3c/svg%3e");
+    background-size: 100% 100%;
+  }
+
+  /* Checkbox */
+  .checkbox {
+    @apply h-4 w-4 appearance-none rounded border-2 border-aima-border bg-aima-bgCard text-aima-primary transition-all duration-200;
+  }
+
+  .checkbox:checked {
+    @apply border-aima-primary bg-aima-primary;
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+    background-size: 100% 100%;
+  }
+}
+
+@layer utilities {
+  /* View transition (App.tsx re-mounts <main> por vista) */
+  .view-enter {
+    animation: view-enter 0.28s ease-out;
+  }
+
+  @keyframes view-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .view-enter {
+      animation: none;
+    }
+  }
+
+  /* Toast animation */
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+  }
+
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Text balance for headlines */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Tabular numbers for metrics */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Chart container */
+  .chart-container {
+    background-color: var(--chart-surface);
+    border-radius: 0.75rem;
+    border: 1px solid var(--chart-grid);
+  }
+
+  /* Recharts customizations */
+  .recharts-tooltip-wrapper {
+    z-index: 20;
+  }
+
+  .recharts-default-tooltip {
+    background-color: var(--chart-surface) !important;
+    border: 1px solid var(--chart-grid) !important;
+    border-radius: 8px !important;
+    box-shadow: var(--shadow-lg) !important;
+    color: var(--chart-text-primary) !important;
+  }
+
+  .recharts-tooltip-label {
+    color: var(--chart-text-secondary) !important;
+  }
+
+  .recharts-legend-wrapper {
+    color: var(--chart-text-secondary) !important;
+  }
+}

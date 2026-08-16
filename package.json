@@ -1,0 +1,37 @@
+{
+  "name": "aima-crm",
+  "version": "1.0.0",
+  "description": "CRM de llamadas diarias para AIMA - Agencia de automatización inmobiliaria",
+  "type": "module",
+  "author": "AIMA",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "tsx watch server/index.ts",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "npm --prefix client run build",
+    "build:server": "tsc -p server/tsconfig.json",
+    "start": "node dist/server/index.js",
+    "import:excel": "tsx server/import-excel.ts",
+    "enrich:whatsapp": "tsx server/enrich-whatsapp.ts",
+    "db:reset": "rm -f data/aima.db && npm run import:excel"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "cors": "^2.8.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.11",
+    "@types/node": "^20.10.6",
+    "@vercel/node": "^3.0.0",
+    "concurrently": "^8.2.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
