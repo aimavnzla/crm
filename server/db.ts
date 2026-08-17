@@ -49,7 +49,7 @@ async function all(sql: string, params: any[] = []) {
 }
 
 async function exec(sql: string) {
-  await db.execute({ sql, args: [] });
+  await db.executeMultiple(sql);
 }
 
 // WAL mode no aplica en libSQL/Turso (usa replicación)
