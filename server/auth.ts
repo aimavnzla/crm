@@ -91,8 +91,8 @@ export function requireAuth(req: Request, res: Response): AuthUser | null {
 }
 
 // Crear usuario inicial (solo para setup)
-export function createInitialUsers() {
-  const existing = usuarioRepo.findAll.all() as AuthUser[];
+export async function createInitialUsers() {
+  const existing = await usuarioRepo.findAll.all() as AuthUser[];
   if (existing.length > 0) return;
 
   const users = [
@@ -103,7 +103,7 @@ export function createInitialUsers() {
 
   for (const u of users) {
     const hash = hashPassword(u.password);
-    usuarioRepo.insert.run(u.username, hash, u.nombre, u.rol);
+    await usuarioRepo.insert.run(u.username, hash, u.nombre, u.rol);
     console.log(`Usuario creado: ${u.username} / ${u.password}`);
   }
 }

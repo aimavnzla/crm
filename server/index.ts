@@ -27,7 +27,7 @@ export function createApp() {
     app.use(cors());
     app.use(express.json({ limit: '10mb' }));
 
-    // Crear usuarios iniciales si no existen
+    // Crear usuarios iniciales si no existen (fire-and-forget, OK para init)
     createInitialUsers();
 
     // Servir archivos estáticos del frontend en producción

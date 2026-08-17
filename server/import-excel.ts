@@ -215,7 +215,7 @@ export async function importarExcel() {
   await runMigrations();
 
   // Crear usuarios iniciales si no existen (necesario para asignación round-robin)
-  createInitialUsers();
+  await createInitialUsers();
 
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.readFile(EXCEL_PATH);

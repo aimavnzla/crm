@@ -20,7 +20,6 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production",
-    "TZ": "America/Caracas"
+    "NODE_ENV": "production"
   }
 }
