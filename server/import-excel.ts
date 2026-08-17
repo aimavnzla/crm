@@ -19,8 +19,8 @@ const PAISES_HOJAS = {
 const HOJAS_IGNORAR = ['Resumen', 'Seguimiento Diario'];
 
 // Obtener lista de usuarios agentes para asignación
-function getAgenteIds(): number[] {
-  const agentes = usuarioRepo.findAll.all() as Array<{ id: number; rol: string }>;
+async function getAgenteIds(): Promise<number[]> {
+  const agentes = await usuarioRepo.findAll.all() as Array<{ id: number; rol: string }>;
   return agentes.filter(u => u.rol === 'agente').map(u => u.id);
 }
 
@@ -61,8 +61,8 @@ async function importarHojaPais(workbook: ExcelJS.Workbook, hojaNombre: string, 
   let actualizados = 0;
   let rowIndex = 0;
 
-  worksheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) return; // Saltar header
+  for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+    const row = worksheet.getRow(rowNumber);
 
     const nombre = row.getCell(1).value?.toString().trim() || '';
     const empresa = row.getCell(2).value?.toString().trim() || null;
@@ -71,14 +71,13 @@ async function importarHojaPais(workbook: ExcelJS.Workbook, hojaNombre: string, 
     const telefono = normalizarTelefono(telefonoRaw);
 
     // Si no tiene teléfono válido, saltar (van en Sin Numero)
-    if (!telefono) return;
+    if (!telefono) continue;
 
     const contesto = parseBool(row.getCell(5).value);
     const no_contesto = parseBool(row.getCell(6).value);
     const interesado = parseBool(row.getCell(7).value);
     const agendo = parseBool(row.getCell(8).value);
     const cerrado = parseBool(row.getCell(9).value);
-    const clasificacionAntigua = row.getCell(10).value?.toString().trim() || null; // Tradicional/Lujo/etc
     const nota = row.getCell(11).value?.toString().trim() || null;
 
     // Asignar contactos round-robin entre agentes
@@ -86,11 +85,11 @@ async function importarHojaPais(workbook: ExcelJS.Workbook, hojaNombre: string, 
     rowIndex++;
 
     // Verificar si ya existe por teléfono
-    const existente = contactoRepo.findByTelefono.get(telefono);
+    const existente = await contactoRepo.findByTelefono.get(telefono);
 
     if (existente) {
       // Actualizar (incluir asignado_a para distribuir entre agentes)
-      contactoRepo.update.run(
+      await contactoRepo.update.run(
         nombre,
         empresa,
         website,
@@ -114,34 +113,37 @@ async function importarHojaPais(workbook: ExcelJS.Workbook, hojaNombre: string, 
       actualizados++;
     } else {
       // Insertar nuevo con asignado_a
-      db.prepare(`
-        INSERT INTO contactos (nombre, empresa, website, telefono, pais, tipo_telefono,
-          contesto, no_contesto, interesado, rechazado, agendo, cerrado,
-          info_enviada_email, info_enviada_whatsapp, clasificacion, nota, fecha_ultimo_contacto, asignado_a)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        nombre,
-        empresa,
-        website,
-        telefono,
-        config.pais,
-        config.tipo,
-        contesto ?? 0,
-        no_contesto ?? 0,
-        interesado ?? 0,
-        0, // rechazado
-        agendo ?? 0,
-        cerrado ?? 0,
-        0, // email
-        0, // whatsapp
-        null, // clasificación de llamada (nueva, empieza vacía)
-        nota,
-        null, // fecha_ultimo_contacto
-        agenteId
-      );
+      await db.execute({
+        sql: `
+          INSERT INTO contactos (nombre, empresa, website, telefono, pais, tipo_telefono,
+            contesto, no_contesto, interesado, rechazado, agendo, cerrado,
+            info_enviada_email, info_enviada_whatsapp, clasificacion, nota, fecha_ultimo_contacto, asignado_a)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        args: [
+          nombre,
+          empresa,
+          website,
+          telefono,
+          config.pais,
+          config.tipo,
+          contesto ?? 0,
+          no_contesto ?? 0,
+          interesado ?? 0,
+          0, // rechazado
+          agendo ?? 0,
+          cerrado ?? 0,
+          0, // email
+          0, // whatsapp
+          null, // clasificación de llamada (nueva, empieza vacía)
+          nota,
+          null, // fecha_ultimo_contacto
+          agenteId
+        ]
+      });
       insertados++;
     }
-  });
+  }
 
   console.log(`  ✅ ${insertados} insertados, ${actualizados} actualizados`);
   return { insertados, actualizados };
@@ -160,8 +162,8 @@ async function importarSinNumero(workbook: ExcelJS.Workbook, agenteIds: number[]
   let actualizados = 0;
   let rowIndex = 0;
 
-  worksheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) return;
+  for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+    const row = worksheet.getRow(rowNumber);
 
     const pais = row.getCell(1).value?.toString().trim() || '';
     const nombre = row.getCell(2).value?.toString().trim() || '';
@@ -169,31 +171,33 @@ async function importarSinNumero(workbook: ExcelJS.Workbook, agenteIds: number[]
     const website = row.getCell(4).value?.toString().trim() || null;
     const estado = row.getCell(5).value?.toString().trim() || null;
 
-    if (!nombre || !pais) return;
+    if (!nombre || !pais) continue;
 
     // Asignar round-robin
     const agenteId = agenteIds[rowIndex % agenteIds.length];
     rowIndex++;
 
     // Para sin número, usar nombre+pais+empresa como clave única aproximada
-    const existente = db.prepare(
-      "SELECT * FROM contactos WHERE tipo_telefono = 'sin_numero' AND nombre = ? AND pais = ? AND (empresa = ? OR (empresa IS NULL AND ? IS NULL))"
-    ).get(nombre, pais, empresa, empresa) as ContactoRow | undefined;
+    const result = await db.execute({
+      sql: "SELECT * FROM contactos WHERE tipo_telefono = 'sin_numero' AND nombre = ? AND pais = ? AND (empresa = ? OR (empresa IS NULL AND ? IS NULL))",
+      args: [nombre, pais, empresa, empresa]
+    });
+    const existente = result.rows[0] as ContactoRow | undefined;
 
     if (existente) {
-      db.prepare(`
-        UPDATE contactos SET empresa = ?, website = ?, nota = ?, asignado_a = ?
-        WHERE id = ?
-      `).run(empresa, website, estado, agenteId, existente.id);
+      await db.execute({
+        sql: `UPDATE contactos SET empresa = ?, website = ?, nota = ?, asignado_a = ? WHERE id = ?`,
+        args: [empresa, website, estado, agenteId, existente.id]
+      });
       actualizados++;
     } else {
-      db.prepare(`
-        INSERT INTO contactos (nombre, empresa, website, telefono, pais, tipo_telefono, nota, asignado_a)
-        VALUES (?, ?, ?, NULL, ?, 'sin_numero', ?, ?)
-      `).run(nombre, empresa, website, pais, estado, agenteId);
+      await db.execute({
+        sql: `INSERT INTO contactos (nombre, empresa, website, telefono, pais, tipo_telefono, nota, asignado_a) VALUES (?, ?, ?, NULL, ?, 'sin_numero', ?, ?)`,
+        args: [nombre, empresa, website, pais, estado, agenteId]
+      });
       insertados++;
     }
-  });
+  }
 
   console.log(`  ✅ ${insertados} insertados, ${actualizados} actualizados`);
   return { insertados, actualizados };
@@ -207,14 +211,14 @@ export async function importarExcel() {
     throw new Error(`No se encuentra el archivo Excel en: ${EXCEL_PATH}`);
   }
 
-  runMigrations();
+  await runMigrations();
 
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.readFile(EXCEL_PATH);
 
   console.log(`📊 Hojas encontradas: ${workbook.worksheets.map(w => w.name).join(', ')}`);
 
-  const agenteIds = getAgenteIds();
+  const agenteIds = await getAgenteIds();
   if (agenteIds.length === 0) {
     console.log('⚠ No hay agentes para asignar contactos');
     return { insertados: 0, actualizados: 0 };
@@ -240,20 +244,17 @@ export async function importarExcel() {
   totalActualizados += resultadoSinNumero.actualizados;
 
   // Estadísticas finales
-  const stats = db.prepare(`
-    SELECT
-      tipo_telefono,
-      COUNT(*) as total
-    FROM contactos
-    GROUP BY tipo_telefono
-  `).all() as Array<{ tipo_telefono: string; total: number }>;
+  const statsResult = await db.execute({
+    sql: `SELECT tipo_telefono, COUNT(*) as total FROM contactos GROUP BY tipo_telefono`,
+    args: []
+  });
+  const stats = statsResult.rows as Array<{ tipo_telefono: string; total: number }>;
 
-  const porPais = db.prepare(`
-    SELECT pais, tipo_telefono, COUNT(*) as total
-    FROM contactos
-    GROUP BY pais, tipo_telefono
-    ORDER BY pais, tipo_telefono
-  `).all() as Array<{ pais: string; tipo_telefono: string; total: number }>;
+  const porPaisResult = await db.execute({
+    sql: `SELECT pais, tipo_telefono, COUNT(*) as total FROM contactos GROUP BY pais, tipo_telefono ORDER BY pais, tipo_telefono`,
+    args: []
+  });
+  const porPais = porPaisResult.rows as Array<{ pais: string; tipo_telefono: string; total: number }>;
 
   console.log('\n📈 RESUMEN FINAL:');
   console.log(`  Insertados: ${totalInsertados}`);
