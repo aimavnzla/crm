@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { resolve } from 'path';
 import { db, contactoRepo, runMigrations, type ContactoRow, usuarioRepo } from './db.js';
 import { EXCEL_PATH } from './paths.js';
+import { createInitialUsers, hashPassword } from './auth.js';
 
 const PAISES_HOJAS = {
   'Argentina': { pais: 'Argentina', tipo: 'movil' },
@@ -212,6 +213,9 @@ export async function importarExcel() {
   }
 
   await runMigrations();
+
+  // Crear usuarios iniciales si no existen (necesario para asignación round-robin)
+  createInitialUsers();
 
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.readFile(EXCEL_PATH);
