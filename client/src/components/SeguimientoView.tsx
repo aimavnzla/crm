@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { ReactNode } from 'react';
 import {
   Lightbulb, CalendarCheck, Mail, MessageCircle, Globe, Search, RefreshCw,
   type LucideIcon,
@@ -17,7 +18,7 @@ function SegButton({
 }: {
   activo: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
   color?: 'default' | 'success' | 'danger';
 }) {
   const clases =

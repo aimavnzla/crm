@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Phone, CheckCircle2, PhoneOff, Lightbulb, CalendarCheck, Lock, Send,
   type LucideIcon,
@@ -69,31 +69,31 @@ interface TarjetaMetrica {
 export function Dashboard() {
   const api = useApi();
   const [periodo, setPeriodo] = useState<Periodo>('hoy');
-  const [recarga, setRecarga] = useState(0);
   const [metricas, setMetricas] = useState<MetricasPeriodo | null>(null);
   const [serie, setSerie] = useState<LlamadasPorDia[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const cargar = useCallback(async () => {
+    try {
+      setCargando(true);
+      setError(null);
+      const [m, s] = await Promise.all([
+        api.getMetricas(periodo),
+        api.getSerieLlamadas(),
+      ]);
+      setMetricas(m);
+      setSerie(s);
+    } catch (err: any) {
+      setError(err.message || 'Error cargando métricas');
+    } finally {
+      setCargando(false);
+    }
+  }, [periodo, api]);
+
   useEffect(() => {
-    const cargar = async () => {
-      try {
-        setCargando(true);
-        setError(null);
-        const [m, s] = await Promise.all([
-          api.getMetricas(periodo),
-          api.getSerieLlamadas(),
-        ]);
-        setMetricas(m);
-        setSerie(s);
-      } catch (err: any) {
-        setError(err.message || 'Error cargando métricas');
-      } finally {
-        setCargando(false);
-      }
-    };
     cargar();
-  }, [periodo, recarga, api]);
+  }, [cargar]);
 
   const metricasRef = useEntrance<HTMLDivElement>([metricas], { y: 8, stagger: 0.05 });
 
@@ -102,7 +102,7 @@ export function Dashboard() {
   }
 
   if (error) {
-    return <ErrorState title="Error cargando dashboard" message={error} onRetry={() => setRecarga(r => r + 1)} />;
+    return <ErrorState title="Error cargando dashboard" message={error} onRetry={cargar} />;
   }
 
   if (!metricas) {

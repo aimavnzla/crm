@@ -60,7 +60,7 @@ export function Sidebar({ vistaActual, onCambioVista, onImportarExcel, user, onL
     <aside className="w-14 sm:w-52 shrink-0 sticky top-0 h-screen flex flex-col aima-bgCard border-r border-aima-border">
       {/* Logo */}
       <div className="flex items-center justify-center sm:justify-start gap-2.5 h-14 px-2 sm:px-4 border-b border-aima-border shrink-0">
-        <img src="/logo.png" alt="AIMA" className="h-6 w-auto" />
+        <img src="/logo-icon.png" alt="AIMA" className="h-6 w-auto" />
         <span className="hidden sm:inline text-sm font-semibold tracking-tight text-aima-text">AIMA CRM</span>
       </div>
 

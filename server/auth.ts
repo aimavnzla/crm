@@ -20,7 +20,7 @@ export function verifyPassword(password: string, hash: string): boolean {
 }
 
 // Middleware de autenticación Basic Auth
-export function basicAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function basicAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Basic ')) {
@@ -37,7 +37,7 @@ export function basicAuthMiddleware(req: Request, res: Response, next: NextFunct
     return res.status(401).json({ error: 'Credenciales inválidas' });
   }
 
-  const user = usuarioRepo.findByUsername.get(username) as AuthUser | undefined;
+  const user = (await usuarioRepo.findByUsername.get(username)) as AuthUser | undefined;
 
   if (!user || !verifyPassword(password, user.password_hash)) {
     res.setHeader('WWW-Authenticate', 'Basic realm="AIMA CRM"');
@@ -50,7 +50,7 @@ export function basicAuthMiddleware(req: Request, res: Response, next: NextFunct
 }
 
 // Middleware opcional - no falla si no hay auth, pero adjunta usuario si existe
-export function optionalBasicAuth(req: Request, res: Response, next: NextFunction) {
+export async function optionalBasicAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Basic ')) {
@@ -65,7 +65,7 @@ export function optionalBasicAuth(req: Request, res: Response, next: NextFunctio
     return next();
   }
 
-  const user = usuarioRepo.findByUsername.get(username) as AuthUser | undefined;
+  const user = (await usuarioRepo.findByUsername.get(username)) as AuthUser | undefined;
 
   if (user && verifyPassword(password, user.password_hash)) {
     (req as any).user = user;
@@ -98,7 +98,7 @@ export async function createInitialUsers() {
   const users = [
     { username: 'anthoni', password: 'anthoni123', nombre: 'Anthoni', rol: 'agente' as const },
     { username: 'rafael', password: 'rafael123', nombre: 'Rafael', rol: 'agente' as const },
-    { username: 'santiago', password: 'santiago123', nombre: 'Santiago', rol: 'admin' as const },
+    { username: 'santiago', password: 'santiago123', nombre: 'Santiago', rol: 'agente' as const },
   ];
 
   for (const u of users) {

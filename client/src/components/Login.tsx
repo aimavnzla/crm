@@ -29,9 +29,7 @@ export function Login() {
     <div className="min-h-screen aima-bg flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-aima-primary/10 mb-4">
-            <User size={32} className="text-aima-primary" aria-hidden="true" />
-          </div>
+          <img src="/logo-horizontal.png" alt="AIMA CRM" className="mx-auto h-16 w-auto mb-4" />
           <h1 className="text-2xl font-bold text-aima-text">AIMA CRM</h1>
           <p className="text-aima-textMuted mt-1">Inicia sesión para continuar</p>
         </div>

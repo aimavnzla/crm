@@ -6,13 +6,17 @@
   "regions": ["iad1"],
   "functions": {
     "api/**/*.ts": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": [
+        "dist/server/**",
+        "node_modules/**"
+      ]
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "destination": "/api/index.ts"
     },
     {
       "source": "/(.*)",

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ComponentType } from 'react';
+import { useState, useCallback, type ComponentType } from 'react';
 import {
   Phone, PhoneOff, Clock, Lightbulb, XCircle, CalendarCheck, Check,
   Mail, MessageCircle, Globe, Loader2, type LucideProps,
@@ -25,22 +25,22 @@ const acciones: Array<{ campo: 'interesado' | 'rechazado' | 'agendo' | 'cerrado'
 export function CallCard({ contacto, onActualizar }: CallCardProps) {
   const api = useApi();
   const [datos, setDatos] = useState({
-    contesto: contacto.contesto ?? 0,
-    no_contesto: contacto.no_contesto ?? 0,
+    contesto: (contacto.contesto ?? 0) as 0 | 1,
+    no_contesto: (contacto.no_contesto ?? 0) as 0 | 1,
     interesado: contacto.interesado ?? 0,
     rechazado: contacto.rechazado ?? 0,
     agendo: contacto.agendo ?? 0,
     cerrado: contacto.cerrado ?? 0,
     info_enviada_email: contacto.info_enviada_email ?? 0,
     info_enviada_whatsapp: contacto.info_enviada_whatsapp ?? 0,
-    clasificacion: contacto.clasificacion,
+    clasificacion: contacto.clasificacion ?? null,
     nota: contacto.nota ?? '',
   });
 
   const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
 
-  // Debounced save
+  // Save on explicit action (not auto-save)
   const guardar = useCallback(async () => {
     setGuardando(true);
     try {
@@ -69,32 +69,38 @@ export function CallCard({ contacto, onActualizar }: CallCardProps) {
     }
   }, [contacto.id, datos, onActualizar]);
 
-  // Auto-save on change with debounce
-  useEffect(() => {
-    const timer = setTimeout(guardar, 1000);
-    return () => clearTimeout(timer);
-  }, [datos, guardar]);
+  // Save wrapper that calls guardar after state update
+  const guardarConEstado = useCallback((nuevosDatos: typeof datos) => {
+    setDatos(nuevosDatos);
+    guardar();
+  }, [guardar]);
 
   const handleContesto = (valor: 0 | 1) => {
     setDatos(prev => {
-      if (valor === 1) {
-        return { ...prev, contesto: 1, no_contesto: 0 };
-      }
-      return { ...prev, contesto: 0 };
+      const nuevos = valor === 1
+        ? { ...prev, contesto: 1 as 0 | 1, no_contesto: 0 as 0 | 1 }
+        : { ...prev, contesto: 0 as 0 | 1 };
+      guardarConEstado(nuevos);
+      return nuevos;
     });
   };
 
   const handleNoContesto = (valor: 0 | 1) => {
     setDatos(prev => {
-      if (valor === 1) {
-        return { ...prev, no_contesto: 1, contesto: 0 };
-      }
-      return { ...prev, no_contesto: 0 };
+      const nuevos = valor === 1
+        ? { ...prev, no_contesto: 1 as 0 | 1, contesto: 0 as 0 | 1 }
+        : { ...prev, no_contesto: 0 as 0 | 1 };
+      guardarConEstado(nuevos);
+      return nuevos;
     });
   };
 
-  const handleToggle = (campo: string, valor: 0 | 1) => {
-    setDatos(prev => ({ ...prev, [campo]: valor }));
+  const handleToggle = (campo: keyof typeof datos, valor: 0 | 1 | string | null) => {
+    setDatos(prev => {
+      const nuevos = { ...prev, [campo]: valor } as typeof datos;
+      guardarConEstado(nuevos);
+      return nuevos;
+    });
   };
 
   const getEstadoColor = () => {
@@ -234,7 +240,7 @@ export function CallCard({ contacto, onActualizar }: CallCardProps) {
           id={`clasificacion-${contacto.id}`}
           className="select flex-1 !py-1.5 !px-2.5 text-xs"
           value={datos.clasificacion || ''}
-          onChange={(e) => setDatos(prev => ({ ...prev, clasificacion: e.target.value as 'Bien' | 'Normal' | 'Mal' | null }))}
+          onChange={(e) => handleToggle('clasificacion', (e.target.value || null) as 'Bien' | 'Normal' | 'Mal' | null)}
           aria-label="Clasificación de la llamada"
         >
           <option value="">— Clasificación —</option>
@@ -246,7 +252,7 @@ export function CallCard({ contacto, onActualizar }: CallCardProps) {
           id={`nota-${contacto.id}`}
           className="input flex-1 !py-1.5 !px-2.5 text-xs resize-y"
           value={datos.nota}
-          onChange={(e) => setDatos(prev => ({ ...prev, nota: e.target.value }))}
+          onChange={(e) => handleToggle('nota', e.target.value)}
           placeholder="Nota de la llamada..."
           aria-label="Nota de la llamada"
           rows={1}

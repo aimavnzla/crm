@@ -56,9 +56,6 @@ export function CallQueue() {
 
   useEffect(() => {
     cargarCola();
-    // Recargar cada 5 minutos
-    const interval = setInterval(cargarCola, 5 * 60 * 1000);
-    return () => clearInterval(interval);
   }, [cargarCola]);
 
   const handleActualizarContacto = useCallback((contactoActualizado: ContactoCola) => {
